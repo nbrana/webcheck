@@ -38,6 +38,10 @@ class Capture:
     phash: str | None = None
     error: str | None = None
     tls_error: bool = False
+    has_password: bool = False
+    generator: str | None = None
+    headings: list[str] = field(default_factory=list)
+    text_excerpt: str | None = None
 
 
 @dataclass
@@ -48,7 +52,7 @@ class Pair:
     ip: str
     by_hostname: Capture
     by_ip: Capture
-    verdict: str = "unknown"  # differs | same | cert-err | unreachable | unknown
+    verdict: str = "unknown"  # differs | exposed | same | cert-err | unreachable | unknown
     reasons: list[str] = field(default_factory=list)
     score: int = 0  # higher sorts earlier in the report
 

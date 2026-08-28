@@ -16,13 +16,13 @@ from .models import Pair
 _CSS = """
 :root {
   --bg: #f6f7f9; --panel: #fff; --ink: #14171a; --muted: #5b6672;
-  --line: #dfe3e8; --differs: #b42318; --cert: #b54708; --same: #067647;
+  --line: #dfe3e8; --differs: #b42318; --cert: #b54708; --exposed: #7a3e9d; --same: #067647;
   --unreachable: #5b6672;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #14171a; --panel: #1c2024; --ink: #e8eaed; --muted: #98a2b3;
-    --line: #2d333b; --differs: #f97066; --cert: #fdb022; --same: #47cd89;
+    --line: #2d333b; --differs: #f97066; --cert: #fdb022; --exposed: #c77dff; --same: #47cd89;
     --unreachable: #98a2b3;
   }
 }
@@ -47,6 +47,7 @@ main { padding: 20px 28px 60px; display: flex; flex-direction: column; gap: 18px
 .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
   padding: 2px 8px; border-radius: 4px; border: 1px solid currentColor; }
 .tag.differs { color: var(--differs); } .tag.cert-err { color: var(--cert); }
+.tag.exposed { color: var(--exposed); }
 .tag.same { color: var(--same); } .tag.unreachable, .tag.unknown { color: var(--unreachable); }
 .reasons { color: var(--muted); font-size: 12.5px; width: 100%; margin-top: 2px; }
 .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -109,7 +110,7 @@ def _pair_block(pair: Pair) -> str:
         f'<div class="reasons">{_esc("; ".join(pair.reasons))}</div>' if pair.reasons else ""
     )
     # Pairs worth a look start expanded; the quiet ones stay folded away.
-    open_attr = " open" if pair.verdict in ("differs", "cert-err") else ""
+    open_attr = " open" if pair.verdict in ("differs", "cert-err", "exposed") else ""
     return f"""<details class="pair" data-verdict="{_esc(pair.verdict)}"{open_attr}>
   <summary>
     <span class="tag {_esc(pair.verdict)}">{_esc(pair.verdict)}</span>
@@ -129,7 +130,7 @@ def build_report(pairs: list[Pair], out_dir: Path) -> Path:
     for pair in pairs:
         counts[pair.verdict] = counts.get(pair.verdict, 0) + 1
 
-    order = ["differs", "cert-err", "unreachable", "same", "unknown"]
+    order = ["differs", "exposed", "cert-err", "unreachable", "same", "unknown"]
     filters = ['<button data-filter="all" aria-pressed="true">all ' f"({len(pairs)})</button>"]
     filters += [
         f'<button data-filter="{v}" aria-pressed="false">{v} ({counts[v]})</button>'

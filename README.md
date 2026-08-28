@@ -40,6 +40,7 @@ Re-run `uv run webcheck report -o out/` to rebuild the page from `out/results.js
 | Verdict | Meaning |
 | --- | --- |
 | `differs` | The two renders disagree — different title, status, or visibly different page |
+| `exposed` | Pages match (or only a cert error), but a landing page looks like a default install, login form, or directory listing |
 | `cert-err` | Pages match, but a TLS certificate error was hit |
 | `unreachable` | Neither leg loaded |
 | `same` | Both legs look and report the same |

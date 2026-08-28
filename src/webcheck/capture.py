@@ -39,6 +39,55 @@ def _shorten(message: str) -> str:
     return message.strip().splitlines()[0][:300]
 
 
+_SIGNALS_JS = """() => {
+  const el = document.querySelector('meta[name="generator"]');
+  const generator = el && el.content ? el.content : null;
+  const headings = [...document.querySelectorAll('h1')]
+    .map(h => (h.innerText || '').trim())
+    .filter(Boolean)
+    .slice(0, 5)
+    .map(t => t.slice(0, 120));
+  const text = (document.body && document.body.innerText) ? document.body.innerText : '';
+  const excerpt = text.slice(0, 2000) || null;
+  return {
+    has_password: !!document.querySelector('input[type="password"]'),
+    generator,
+    headings,
+    excerpt,
+  };
+}"""
+
+
+def apply_signals(cap: Capture, raw: dict) -> Capture:
+    """Copy a page.evaluate() payload onto cap, clipping to stored limits."""
+    cap.has_password = bool(raw.get("has_password"))
+    generator = raw.get("generator")
+    if isinstance(generator, str):
+        generator = generator.strip() or None
+    else:
+        generator = None
+    cap.generator = generator
+
+    headings: list[str] = []
+    for item in raw.get("headings") or []:
+        if not isinstance(item, str):
+            continue
+        text = item.strip()
+        if not text:
+            continue
+        headings.append(text[:120])
+        if len(headings) == 5:
+            break
+    cap.headings = headings
+
+    excerpt = raw.get("excerpt")
+    if isinstance(excerpt, str) and excerpt:
+        cap.text_excerpt = excerpt[:2000]
+    else:
+        cap.text_excerpt = None
+    return cap
+
+
 async def _render(context, url: str, via: str, shot_path: Path, timeout_ms: int) -> Capture:
     cap = Capture(url=url, via=via)
     page = await context.new_page()
@@ -64,6 +113,13 @@ async def _render(context, url: str, via: str, shot_path: Path, timeout_ms: int)
         cap.final_url = page.url
         cap.title = (await page.title()) or None
         cap.redirects = redirects
+
+        try:
+            raw = await page.evaluate(_SIGNALS_JS)
+            if isinstance(raw, dict):
+                apply_signals(cap, raw)
+        except PlaywrightError:
+            pass
 
         shot_path.parent.mkdir(parents=True, exist_ok=True)
         await page.screenshot(path=str(shot_path), full_page=False)
