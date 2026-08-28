@@ -20,11 +20,11 @@ Write a CSV of the hosts you want to audit:
 
 ```csv
 hostname,ip
-example.com,93.184.216.34
 intranet.corp.net,10.0.4.12
+app.example.com,192.0.2.10
 ```
 
-Then capture and review:
+The IP is the address you intend to audit — this tool never looks it up. Then capture and review:
 
 ```bash
 uv run webcheck capture hosts.csv -o out/
@@ -40,6 +40,7 @@ Re-run `uv run webcheck report -o out/` to rebuild the page from `out/results.js
 | Verdict | Meaning |
 | --- | --- |
 | `differs` | The two renders disagree — different title, status, or visibly different page |
+| `exposed` | Pages match (or only a cert error), but a landing page looks like a default install, login form, or directory listing |
 | `cert-err` | Pages match, but a TLS certificate error was hit |
 | `unreachable` | Neither leg loaded |
 | `same` | Both legs look and report the same |

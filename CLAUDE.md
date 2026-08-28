@@ -20,7 +20,7 @@ That second point is why captures are always taken in *pairs* and reviewed side 
 - **`inputs.py`** — parses `hostname,ip` CSV into `Target`s. Explicit IPs only; there is no DNS resolution anywhere in this codebase, by design (split-horizon DNS and the IP you want to audit often disagree with what a resolver returns).
 - **`capture.py`** — Playwright/Chromium. Renders `https://<hostname>/` and `https://<ip>/` per target.
 - **`phash.py`** — dHash over the PNGs. Dependency-light on purpose: Pillow only.
-- **`compare.py`** — turns a `Pair` into a verdict (`differs` / `cert-err` / `unreachable` / `same`), a human-readable `reasons` list, and a `score` used purely for sort order.
+- **`compare.py`** — turns a `Pair` into a verdict (`differs` / `exposed` / `cert-err` / `unreachable` / `same`), a human-readable `reasons` list, and a `score` used purely for sort order.
 - **`report.py`** — one HTML page, no build step, no external assets.
 
 ### The two-pass TLS trick
@@ -29,13 +29,13 @@ That second point is why captures are always taken in *pairs* and reviewed side 
 
 ### Verdict heuristics
 
-`compare.py` flags, it never clears — every pair reaches the report regardless of verdict, and `score` only decides what floats to the top. An IP visit that redirects back to the hostname has its score reduced, since that explains away most divergence. `PHASH_DIFFERENT` (dHash distance out of 64) is the main tuning knob.
+`compare.py` flags, it never clears — every pair reaches the report regardless of verdict, and `score` only decides what floats to the top. An IP visit that redirects back to the hostname has its score reduced, since that explains away most divergence. `PHASH_DIFFERENT` (dHash distance out of 64) is the main tuning knob. An `exposed` pair is a question-1 finding (default page, login form, or directory listing) that did not already `differ`.
 
 Cert errors on the IP leg are expected, not bugs — SNI can't match when you dial an IP — so they carry little weight alone. A cert error on the *hostname* leg is a real finding and scores higher.
 
 ## Status
 
-Working end to end; verified against live hosts. No tests yet.
+Working end to end; verified against live hosts. pytest covers `inputs`-adjacent models, `phash` consumers in compare, and capture signal clipping — no browser in the suite.
 
 ## Tooling
 
@@ -56,11 +56,9 @@ Output directory is a unit — `report.html` links `shots/*.png` relatively. Mov
 
 ## Tests
 
-No test runner is configured. If adding one, prefer `uv add --dev pytest` and:
-
 ```bash
 uv run pytest                               # full suite
 uv run pytest tests/test_x.py::test_y -x    # single test
 ```
 
-`inputs`, `phash`, and `compare` are pure and worth covering first. `compare` can be tested entirely on hand-built `Pair` objects with no browser involved.
+`inputs`, `phash`, and `compare` are pure. `compare` is tested on hand-built `Pair` objects with no browser involved.

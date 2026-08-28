@@ -15,11 +15,18 @@ from .report import build_report
 
 _MARK = {
     "differs": "DIFFERS ",
+    "exposed": "EXPOSED ",
     "cert-err": "cert-err",
     "unreachable": "down    ",
     "same": "same    ",
     "unknown": "?       ",
 }
+
+
+def summary_line(pairs: list[Pair]) -> str:
+    flagged = sum(1 for p in pairs if p.verdict == "differs")
+    exposed = sum(1 for p in pairs if p.verdict == "exposed")
+    return f"{flagged} of {len(pairs)} pair(s) flagged as differing, {exposed} as exposed."
 
 
 def _progress(pair: Pair) -> None:
@@ -51,8 +58,7 @@ def _run_capture(args) -> int:
         report = build_report(pairs, args.out)
         print(f"\nReport: {report}", file=sys.stderr)
 
-    flagged = sum(1 for p in pairs if p.verdict == "differs")
-    print(f"{flagged} of {len(pairs)} pair(s) flagged as differing.", file=sys.stderr)
+    print(summary_line(pairs), file=sys.stderr)
     return 0
 
 

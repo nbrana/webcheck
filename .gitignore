@@ -11,3 +11,6 @@ wheels/
 
 # webcheck output
 out/
+
+# git worktrees
+.worktrees/
