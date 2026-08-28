@@ -20,11 +20,11 @@ Write a CSV of the hosts you want to audit:
 
 ```csv
 hostname,ip
-example.com,93.184.216.34
 intranet.corp.net,10.0.4.12
+app.example.com,192.0.2.10
 ```
 
-Then capture and review:
+The IP is the address you intend to audit — this tool never looks it up. Then capture and review:
 
 ```bash
 uv run webcheck capture hosts.csv -o out/
